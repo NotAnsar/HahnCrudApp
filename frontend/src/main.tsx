@@ -1,24 +1,50 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createBrowserRouter, RouterProvider, Link } from 'react-router-dom';
 import './index.css';
 import { ThemeProvider } from './components/theme-provider.tsx';
-import { createBrowserRouter, Link, RouterProvider } from 'react-router-dom';
-import HomePage from './pages/HomePage.tsx';
+import { ProtectedRoute } from './components/auth/ProtectedRoute.tsx';
+import { PublicRoute } from './components/auth/PublicRoute.tsx';
 import UserList from './pages/users/UserList.tsx';
-import { userLoader, usersLoader } from './loaders/usersLoaders.ts';
-import { Layout } from './pages/Layout.tsx';
-import NotFoundPage from './pages/NotFoundPage.tsx';
 import UserAdd from './pages/users/UserAdd.tsx';
 import UserEdit from './pages/users/UserEdit.tsx';
+import LoginPage from './pages/auth/LoginPage.tsx';
+import RegisterPage from './pages/auth/RegisterPage.tsx';
+import NotFoundPage from './pages/NotFoundPage.tsx';
+import HomePage from './pages/HomePage.tsx';
+import { Layout } from './pages/Layout.tsx';
+import { userLoader, usersLoader } from './loaders/usersLoaders.ts';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import { Toaster } from 'sonner';
 
 const router = createBrowserRouter([
 	{
 		path: '/',
 		element: <Layout />,
+		children: [{ index: true, element: <HomePage /> }],
+	},
+	{
+		path: '/auth',
+		element: (
+			<PublicRoute>
+				<Layout />
+			</PublicRoute>
+		),
 		children: [
-			{ index: true, element: <HomePage /> },
+			{ path: 'login', element: <LoginPage /> },
+			{ path: 'register', element: <RegisterPage /> },
+		],
+	},
+	{
+		path: '/users',
+		element: (
+			<ProtectedRoute>
+				<Layout />
+			</ProtectedRoute>
+		),
+		children: [
 			{
-				path: '/users',
+				index: true,
 				element: <UserList />,
 				loader: usersLoader,
 				errorElement: (
@@ -28,12 +54,9 @@ const router = createBrowserRouter([
 					</div>
 				),
 			},
+			{ path: 'add', element: <UserAdd /> },
 			{
-				path: '/users/add',
-				element: <UserAdd />,
-			},
-			{
-				path: '/users/edit/:id',
+				path: 'edit/:id',
 				element: <UserEdit />,
 				loader: userLoader,
 				errorElement: (
@@ -48,15 +71,18 @@ const router = createBrowserRouter([
 					</div>
 				),
 			},
-			{ path: '*', element: <NotFoundPage /> },
 		],
 	},
+	{ path: '*', element: <NotFoundPage /> },
 ]);
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
 		<ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
-			<RouterProvider router={router} />
+			<AuthProvider>
+				<RouterProvider router={router} />
+				<Toaster />
+			</AuthProvider>
 		</ThemeProvider>
 	</StrictMode>
 );

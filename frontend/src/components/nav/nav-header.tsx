@@ -1,10 +1,19 @@
-import { Link, useLocation } from 'react-router-dom';
-import { buttonVariants } from '@/components/ui/button';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
-import { Home, Users, Plus } from 'lucide-react';
+import { Home, Users, Plus, LogIn, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
-const links = [
+const publicLinks = [
+	{
+		to: '/',
+		label: 'Home',
+		icon: <Home className='h-4 w-4' />,
+	},
+];
+
+const authenticatedLinks = [
 	{
 		to: '/',
 		label: 'Home',
@@ -24,10 +33,19 @@ const links = [
 
 export function NavHeader() {
 	const location = useLocation();
+	const navigate = useNavigate();
+	const { isAuthenticated, logout } = useAuth();
 
 	const isActive = (path: string) => {
 		return location.pathname === path;
 	};
+
+	const handleLogout = () => {
+		logout();
+		navigate('/');
+	};
+
+	const links = isAuthenticated ? authenticatedLinks : publicLinks;
 
 	return (
 		<header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
@@ -63,8 +81,36 @@ export function NavHeader() {
 					))}
 				</nav>
 
-				{/* Theme Toggle */}
+				{/* Auth Actions & Theme Toggle */}
 				<div className='flex items-center gap-2'>
+					{isAuthenticated ? (
+						<Button variant='outline' size='sm' onClick={handleLogout}>
+							<LogOut className='h-4 w-4' />
+							<span className='hidden sm:inline'>Logout</span>
+						</Button>
+					) : (
+						<>
+							<Link
+								to='/auth/login'
+								className={cn(
+									buttonVariants({ variant: 'ghost', size: 'sm' }),
+									'flex items-center gap-2'
+								)}
+							>
+								<LogIn className='h-4 w-4' />
+								<span className='hidden sm:inline'>Login</span>
+							</Link>
+							<Link
+								to='/auth/register'
+								className={cn(
+									buttonVariants({ variant: 'default', size: 'sm' }),
+									'flex items-center gap-2'
+								)}
+							>
+								<span className='hidden sm:inline'>Sign Up</span>
+							</Link>
+						</>
+					)}
 					<ModeToggle />
 				</div>
 			</div>
