@@ -32,6 +32,11 @@ public class UserService {
     }
 
     public UserDto createUser(UserDto userDto) {
+        // Check password for create operation
+        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("Password is required");
+        }
+
         // Check if username already exists
         if (userRepository.existsByUsername(userDto.getUsername())) {
             throw new RuntimeException("Username already exists: " + userDto.getUsername());
@@ -82,7 +87,12 @@ public class UserService {
         return convertToDto(updatedUser);
     }
 
-    public void deleteUser(Long id) {
+    public void deleteUser(Long id, Long currentUserId) {
+
+        if (currentUserId.equals(id)) {
+            throw new RuntimeException("You cannot delete your own account");
+        }
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         userRepository.delete(user);

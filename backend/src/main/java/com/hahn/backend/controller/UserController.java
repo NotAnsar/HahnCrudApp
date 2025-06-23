@@ -2,11 +2,13 @@ package com.hahn.backend.controller;
 
 import com.hahn.backend.dto.UserDto;
 import com.hahn.backend.payload.response.DefaultResponse;
+import com.hahn.backend.security.UserPrincipal;
 import com.hahn.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,48 +30,40 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<DefaultResponse<UserDto>> getUserById(@PathVariable Long id) {
-        try {
-            UserDto user = userService.getUserById(id);
-            DefaultResponse<UserDto> response = new DefaultResponse<>("User retrieved successfully", true, user);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            DefaultResponse<UserDto> response = new DefaultResponse<>(e.getMessage(), false, null);
-            return ResponseEntity.notFound().build();
-        }
+        UserDto user = userService.getUserById(id);
+        DefaultResponse<UserDto> response = new DefaultResponse<>("User retrieved successfully", true, user);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
     public ResponseEntity<DefaultResponse<UserDto>> createUser(@Valid @RequestBody UserDto userDto) {
-        try {
-            UserDto createdUser = userService.createUser(userDto);
-            DefaultResponse<UserDto> response = new DefaultResponse<>("User created successfully", true, createdUser);
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            DefaultResponse<UserDto> response = new DefaultResponse<>(e.getMessage(), false, null);
-            return ResponseEntity.badRequest().body(response);
-        }
+        UserDto createdUser = userService.createUser(userDto);
+        DefaultResponse<UserDto> response = new DefaultResponse<>("User created successfully", true, createdUser);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DefaultResponse<UserDto>> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
-        try {
-            UserDto updatedUser = userService.updateUser(id, userDto);
-            DefaultResponse<UserDto> response = new DefaultResponse<>("User updated successfully", true, updatedUser);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            DefaultResponse<UserDto> response = new DefaultResponse<>(e.getMessage(), false, null);
-            return ResponseEntity.badRequest().body(response);
-        }
+    public ResponseEntity<DefaultResponse<UserDto>> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserDto userDto) {
+        UserDto updatedUser = userService.updateUser(id, userDto);
+        DefaultResponse<UserDto> response = new DefaultResponse<>("User updated successfully", true, updatedUser);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<DefaultResponse<Object>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<DefaultResponse<Void>> deleteUser(@PathVariable Long id, Authentication authentication) {
         try {
-            userService.deleteUser(id);
-            DefaultResponse<Object> response = new DefaultResponse<>("User deleted successfully", true, null);
+            UserPrincipal currentUser = (UserPrincipal) authentication.getPrincipal();
+            Long currentUserId = currentUser.getId();
+
+            userService.deleteUser(id, currentUserId);
+
+            DefaultResponse<Void> response = new DefaultResponse<>("User deleted successfully", true, null);
             return ResponseEntity.ok(response);
+
         } catch (RuntimeException e) {
-            DefaultResponse<Object> response = new DefaultResponse<>(e.getMessage(), false, null);
+            DefaultResponse<Void> response = new DefaultResponse<>(e.getMessage(), false, null);
             return ResponseEntity.badRequest().body(response);
         }
     }

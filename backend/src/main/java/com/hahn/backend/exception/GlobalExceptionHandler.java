@@ -45,5 +45,4 @@ public class GlobalExceptionHandler {
         DefaultResponse<Object> response = new DefaultResponse<>("An unexpected error occurred", false, null);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 }
